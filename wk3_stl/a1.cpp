@@ -37,7 +37,7 @@ int main()
 	std::sort(begin(nums_v), end(nums_v)); // sort can have 3rd argument as ascending and descending
 
 	for (auto it = std::cbegin(nums_v); it != std::cend(nums_v); ++it) { // cbegin = iterator is NOT const, but point to elements that are const, READ ONLY
-	// for (auto it = std::cbegin(nums_a); it != std::cend(nums_a); ++it) { ===> disadvantage: can't use overloading for the template specialization, no need to modify class or inherit class to get begin and end
+	// for (auto it = nums_v.begin(); it != nums_v.end(); ++it) { ===> disadvantage: can't use overloading for the template specialization, no need to modify class or inherit class to get begin and end
 		std::cout << *it << " ";
 	}
 	std::cout << std::endl;
@@ -49,7 +49,7 @@ int main()
 	std::sort(begin(nums_a), end(nums_a)); // sort can have 3rd argument as ascending and descending
 
 	for (auto it = std::cbegin(nums_a); it != std::cend(nums_a); ++it) { // cbegin = iterator is NOT const, but point to elements that are const, READ ONLY
-	// for (auto it = std::cbegin(nums_a); it != std::cend(nums_a); ++it) { ===> disadvantage: can't use overloading for the template specialization, no need to modify class or inherit class to get begin and end
+	// for (auto it = nums_a.begin(); it != nums_a.end(); ++it) { ===> disadvantage: can't use overloading for the template specialization, no need to modify class or inherit class to get begin and end
 		std::cout << *it << " ";
 	}
 	std::cout << std::endl;
