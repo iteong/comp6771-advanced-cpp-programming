@@ -1,0 +1,251 @@
+bplist00Ñ_WebMainResourceÕ	
+^WebResourceURL_WebResourceData_WebResourceMIMEType_WebResourceTextEncodingName_WebResourceFrameName_Bhttps://www.cse.unsw.edu.au/~cs6771/16s2/solutions/tute02_sol.htmlO ½<html><head><title>COMP6771, Tutorial - Week 2</title></head><body alink="#660000" bgcolor="#ffffff" link="#800066" vlink="#000066" marginwidth="10" marginheight="0">
+
+<table align="center" border="0" width="95%"><tbody><tr><td>
+
+<h2><p></p><center><b>
+COMP6771â€“ Advanced C++ Programming<br>
+Session 2, 2016</b></center><p></p></h2>
+
+<h2><p></p><center><b>Tutorial â€“ Week 2<br>Solutions</b></center><p></p></h2>
+
+<hr align="left">
+
+<h3>Solutions</h3>
+
+<ol>
+<li>
+<p>
+Variables of class type are always initialised via their default constructor.
+Variables of built-in type are initialised to 0 only when they are defined at global scope,
+otherwise they are uninitialiased.
+</p><pre>   s1 -&gt; ""
+   i1 -&gt; 0
+   s2 -&gt; ""
+   i2 -&gt; random value
+</pre> 
+
+</li><li>
+<p>
+The behaviour is implementation-defined. But typically,
+the output can be 12, -3, -2, 8 depending on the
+order in which f(), g() and h() are called as  
+demonstrated below. 
+</p><pre>  int j1 = f(); // j1 = 0, i = 1
+  int j2 = g(); // j2 = 4, i = 1
+  int j3 = h(); // j3 = 3, i = 1  
+  std::cout &lt;&lt; j1 + j2 * j3 &lt;&lt; std::endl; // 12
+
+  int j1 = f(); // j1 = 0, i = 1 
+  int j3 = h(); // j3 = 3, i = 1
+  int j2 = g(); // j2 = 4, i = 1
+  std::cout &lt;&lt; j1 + j2 * j3 &lt;&lt; std::endl; // 12
+
+  int j2 = g(); // j2 = -1, i = 0
+  int j1 = f(); // j1 = 0, i = 1 
+  int j3 = h(); // j3 = 3, i = 1 
+  std::cout &lt;&lt; j1 + j2 * j3 &lt;&lt; std::endl; // -3
+
+  int j2 = g(); // j2 = -1, i = 0
+  int j3 = h(); // j3 = 2, i = 0
+  int j1 = f(); // j1 = 0, i = 1
+  std::cout &lt;&lt; j1 + j2 * j3 &lt;&lt; std::endl; // -2
+
+  int j3 = h(); // j3 = 2, i = 0
+  int j1 = f(); // j1 = 0, i = 1
+  int j2 = g(); // j2 = 4, i = 1
+  std::cout &lt;&lt; j1 + j2 * j3 &lt;&lt; std::endl; // 8
+
+  int j3 = h(); // j3 = 2, i = 0
+  int j2 = g(); // j2 = -1, i = 0
+  int j1 = f(); // j1 = 0, i = 1
+  std::cout &lt;&lt; j1 + j2 * j3 &lt;&lt; std::endl; // -2
+</pre>
+According to the operator precedence and associativity, *
+must be performed before +. However, there are no
+guarantees as to the order in which these functions are called.
+
+<p>
+The reason for the undefined order of evaluation for 
+expressions is, like ever so often in C++, efficiency. 
+The compiler  is given the liberty to evaluate expressions 
+in the order that is most efficient for a given platform 
+and processor.   One example may be the reordering 
+of arithmetic instructions for the maximum usage of the ALUs or hiding memory latency with calculations
+ 
+</p><p>
+Note that
+</p><ul>
+ <li>The global variable i is initialised to 0 by default, and
+ </li><li>++i will increment the value of i and then return the incremented value as an lvalue.
+i++ will increment the value of i but return the pre-incremented value as a rvalue.
+</li></ul>
+
+<p> An equivalent C program will behave the same way as in C++.
+
+</p><p>In Java, the output is always 12. To ensure that Java
+programs are platform-independent, all the
+subexpressions are required to be evaluated from left to right.
+
+</p></li><li>
+<p>
+
+See Question 3 and its answer below:
+
+http://herbsutter.com/2013/06/07/gotw-92-solution-auto-variables-part-1/
+
+</p></li><li>
+<p>
+In the first case, the output will be "1 2 3" for the
+following reasons:
+</p><ul>
+<li> ++ has higher precedence than *. So
+ <tt>*p++</tt> is evaluated as <tt>*(p++)</tt>.
+</li><li> <tt>p++</tt> increments the value of <tt>p</tt> and
+returns the pre-incremented value <tt>p</tt> as a rvalue, which cannot be written into but can be dereferenced. 
+</li><li> <tt>*(p++)</tt> returns the value stored in <tt>*p</tt>. 
+</li></ul>
+
+<p>
+In the second case, <tt>(*p)++</tt> increments
+the value in <tt>*p</tt> and returns the pre-incremented 
+value in <tt>*p</tt>.
+Suppose <tt>sizeof(unsigned short) = 2 </tt> bytes.
+The output "1, 2, ..., 65535" since the next value will be 0.
+
+
+</p></li><li>
+<p>The code is valid and prints the elements of <tt>nums</tt>. 
+C-style would declare all variables at the top of the functions and traverse
+the array up to its length.
+The pointers form an iterator range.
+We use <tt>const</tt> because we do not intend to modify the values in the array. 
+The <tt>last</tt> pointer points to "one past the end" of <tt>nums</tt>. 
+This is legal in C++ as long as it is never dereferenced!
+
+In C++, the code can be written more elegently as:
+</p><pre>for (const auto *ip = begin(nums); ip != end(nums); ++ip) 
+   std::cout &lt;&lt; *ip &lt;&lt; std::endl;
+</pre>
+The deduced type for <tt>ip</tt> is <tt> const int*</tt>. 
+If the <tt>const</tt> qualifier is omitted, 
+the deduced type for <tt>ip</tt> will be <tt> int*</tt>,
+making it possible to write into *ip.
+
+</li><li>
+<p>
+The <code>static_cast</code> is used to make implicit conversions explicit, for example:
+</p><pre>   double d = 2.0;
+   int i = static_cast&lt;int&gt;(d);
+</pre>
+The <code>const_cast</code> is used to cast away <tt>const</tt>ness, for example:
+<pre>   const double d = 2.0;
+   double &amp;dref = const_cast&lt;double&gt;(d);
+</pre>
+The <code>reinterpret_cast</code> is used to convert between unrelated types, for example:
+<pre>   int *ip = reinterpret_cast&lt;int *&gt; malloc(sizeof(int) * 10);
+</pre>
+Casts are a sign of poor design and should be avoided. The C++ named casts are much more visible
+than the C-style casts, they are also more specific as to what kind of cast is taking place.
+
+</li><li>
+<p>This version, <code>int slength(const string &amp;s);</code>, will be more versatile since it
+can be called with both <tt>const</tt> and non-<tt>const</tt> arguments.
+
+</p></li><li>
+<p>Specifying an object as <tt>const</tt> is a contract that its value will not be changed. 
+The compiler will enforce this constraint. The question above shows why using <tt>const</tt>
+can make functions more versatile. Code safety is increased because accidental changes to
+<tt>const</tt> objects will be caught at compile time. Additonal optimisations options are 
+available on a <tt>const</tt> object since the compiler can safely create multiple copies
+of the object. 
+
+</p></li><li>
+<ol>
+<li><code>void print(int i);</code>
+</li><li><code>void print(double d);</code> - overloads 1
+</li><li><code>void print(int myInt);</code> - clashes with 1, different argument name does not suffice
+</li><li><code>int print(int i);</code> - clashes with 1, different return value does not suffice 
+</li><li><code>int print(string s);</code> - overloads 1
+</li><li><code>void print(int i = 0);</code> - clashes with 1, default value does not suffice
+</li><li><code>void print(const int i);</code> - clashes with 1, constness of simple type does not suffice
+</li><li><code>{ void print(char c); }</code> - not an overload, different scope
+</li><li><code>void print(int *i);</code> - overloads 1
+</li><li><code>void print(const int *i);</code> - overloads 1, pointer to const type OK
+</li><li><code>void print(int *const i);</code> - clashes with 9, constness of pointer does not suffice
+</li><li><code>void print(const int *const i);</code> - clashes with 10, constness of pointer does not suffice
+</li></ol>
+</li><li>
+<p>
+</p><pre>   #include &lt;iostream&gt;
+   #include &lt;cmath&gt;
+   
+   using std::cout;
+   using std::cin;
+   using std::endl;
+   using std::sqrt;
+   
+   int main() {
+     int a, b, c;
+     cout &lt;&lt; "Enter triangle side-lengths: ";
+     cin &gt;&gt; a &gt;&gt; b &gt;&gt; c;
+
+     double sp = (a + b + c) / 2.0;
+     double area = sqrt(sp * (sp - a) * (sp - b) * (sp - c));
+     cout &lt;&lt; "Triangle area is: " &lt;&lt; area &lt;&lt; endl;
+     
+     return 0;
+   }
+</pre>
+
+</li><li>
+<p>
+</p><pre>   void swap3(int &amp;x, int &amp;y, int &amp;z) {
+     int tmp;
+     if (x &gt; y) {
+       tmp = x;
+       x = y;
+       y = tmp;
+     }     
+     if (y &gt; z) {
+       tmp = z;
+       z = y;
+       y = tmp;
+     }     
+     if (x &gt; y) {
+       tmp = x;
+       x = y;
+       y = tmp;
+     }     
+   }
+</pre>
+
+</li><li>
+<pre>   #include &lt;iostream&gt;
+   #include &lt;fstream&gt;
+
+   using namespace std;
+   
+   int main() {
+     int i = 200;
+     double d = 3.14159;
+     ofstream ofs("myfile.txt");
+     ofs &lt;&lt; i &lt;&lt; " " &lt;&lt; d;
+     ofs.close();
+     ifstream ifs("myfile.txt");
+     ifs &gt;&gt; i &gt;&gt; d;
+     ifs.close();
+     cout &lt;&lt; i &lt;&lt; " " &lt;&lt; d &lt;&lt; endl;
+   }
+</pre>
+
+
+</li></ol>
+
+<p>&nbsp;</p>
+<hr align="left">
+
+</td></tr></tbody></table>
+
+
+</body></html>Ytext/htmlUUTF-8Tmain    ( 7 I _ } ” Ù!š!¤!ª                           !¯
