@@ -1,0 +1,230 @@
+bplist00Ñ_WebMainResourceÕ	
+_WebResourceData_WebResourceMIMEType_WebResourceTextEncodingName_WebResourceFrameName^WebResourceURLO!J<html><head><title>COMP6771, Tutorial - Week 4</title></head>
+<body alink="#660000" bgcolor="#ffffff" link="#800066" vlink="#000066" marginwidth="10" marginheight="0">
+
+<table align="center" border="0" width="95%"><tbody><tr><td>
+
+<h2><p></p><center><b>
+COMP6771â€“ Advanced C++ Programming<br>
+Session 2, 2016</b></center><p></p></h2>
+
+<h2><p></p><center><b>Tutorial â€“ Week 4<br>Solutions</b></center><p></p></h2>
+
+<hr align="left">
+
+<h3>Tutorial Solutions</h3>
+
+Please let us know if you find any mistakes in these solutions.
+
+<ol>
+
+<li>
+<p><i>Data abstraction</i> is a programming technique that relies
+on the separation of interface and implementation. The
+interface of a class provides the operations that the users
+of the class can execute. The implementation includes the
+class' data members, the bodies of the functions that
+constitute the interface and any other functions needed
+to define the class that are not intended for general use.
+</p><p>
+Encapsulation enforces the separation of a class's
+interface and implementation.
+In C++, encapsulation is enforced by preventing general user access to the private parts of a class using the access
+control mechanism provided.
+More specifically, this is the concept of <i>information hiding</i>. 
+</p><p>
+A class that uses data abstraction and encapsulation
+defines an ADT.
+  
+  
+</p></li><li>
+<p>An <i>incomplete type</i> is one that has been declared but not yet defined. 
+It is not possible use an incomplete type to define a variable or class member of that type since the compiler doesn't know the memory layout of the
+type in order to create objects for the type. However, 
+it is legal to define references or pointers to incomplete types.
+</p><p>
+C suffers from the same problem. 
+</p><p>
+However, Java doesn't require
+forward declarations. A Java program is compiled to bytecode,
+which preserves all the type information in the source code.
+In addition, if you need to refer to some names defined in
+a package, you import the package explicitly
+using an "import statement". As the packages 
+in Java are organised hierarchically, all names are fully qualified and can thus be ambiguously identified.
+  
+</p></li><li>
+<p>No, unless those members are declared <tt>static</tt>. 
+A class cannot have data members of its own type because
+the compiler must know the size of a class object.
+However,
+a static class member doesn't reside in a class object.
+Therefore, it has no impact to size of a class object. 
+  
+</p></li><li>
+<p>Object X is fine since <tt>my_type</tt> has not been used as a type inside X before being redefined.
+Object Y is in error since <tt>my_type</tt> is used as the type of member&nbsp;<tt>a</tt> of Y before being redefined. 
+
+</p></li><li>
+This question tests your understanding about
+name lookup in C++. Read 7.4.
+<pre> 
+
+   typedef int Type;
+   Type initVal() { // int
+     return 0;
+   }
+
+   class Exercise {
+   public:
+     typedef double Type;
+     Type setVal(Type); // double
+     Type initVal(); // double
+   private:
+     Type val; // double
+   };
+
+// int                   double
+   Type Exercise::setVal(Type parm) {
+     val = parm + initVal(); // Exercise::initVal
+     return val;
+   }
+</pre>
+Correct version:
+<pre>   Exercise::Type Exercise::setVal(Type parm) {
+     val = parm + ::initVal();
+     return val;
+   }
+</pre>
+
+</li><li>
+<p>Class constructors are used to create and initialise objects of class type.
+The default constructor is the constructor that can be called with no arguments.
+If no constructor is specified the compiler creates a <i>synthesised</i>
+default constructor, which initialiases data members of built-in and class type
+according to the standard rules for initialisation. 
+
+</p></li><li><p>C++ object construction occurs in two phases, the first phase sees the creation and
+initialisation of data members, while the second phase runs the body of the constructor.
+The constructor initialiser list gives the programmer control over the initialisation
+of data members during the first phase. This is more efficient than constructor-body
+initialisation because the data members are direct initialised, rather than default initialised
+and then assigned a value in the constructor body.
+<br>
+The following <i>must</i> be initialised in the constructor initialiser list:
+</p><ul>
+<li>members of class types without default constructors
+</li><li><tt>const</tt> members
+</li><li>reference type members
+</li></ul>
+
+</li><li> 
+<p>Only a constructor that can be called with a single argument defines an implicit type conversion
+from the argument type to the class type. For example:
+</p><pre>   class Book {
+     Book(const string bkTitle = "") : title(bkTitle) { }
+   private:
+     string title;
+   };
+</pre>
+C++ provides the qualifier <tt>explicit</tt> to stop a particular constructor from being
+used in implicit conversions.
+
+</li><li>
+<p> I am not sure if there is a standard answer for this.
+</p><p> For advocates of pure OO principles, only the 
+objects of a class can know about their data and the only
+way to act on the class' data is through the operations 
+provided in the class' interface. In practice,
+the C++ 'friend' specifier allows the
+designated class access to protected data or functionality 
+within a class making the friend statement. For example,
+suppose you have a class such as a Window. Quite likely 
+a Window will have many function/data elements that should not be publicly accessible, but are needed by a related class 
+such as a WindowManager.
+</p><p> The C++ friend is close to Java's package and C#'s
+internal.
+</p><p> It is believed that
+encapsulation is not broken here because a class itself 
+dictates who can access its private members. 
+However, if some changes
+are made to the implementation of the class, its
+friends may need to be changed, too. This doesn't appear
+to promote modularisation very well. On the other hand,
+since friends are considered as part of the class' interface,
+such changes made to the friends are necessary. 
+
+</p><p> Read <tt>http://www.parashift.com/c++-faq/friends-and-encap.html</tt>
+
+
+
+</p></li><li>
+<p>The friend declarations in a class only state access.
+Their general declarations must still be provided:
+</p><pre>   class Y;
+   void f();
+</pre>
+Note that despite function <tt>f()</tt> being defined inside class X, it is only conceptually part of X's interface,
+but it is actually an `external' function that has been granted friendship and happens to also be defined inside the class.
+Function <tt>f()</tt> is available in the outer scope but simply hidden. Note that we just inject its type into the
+outer scope, not the implementation. It is not possible to define friend class Y inside X.
+
+
+</li><li>
+<p>Integral <tt>const static</tt> data members may be initialised in the class
+definition using a constant expression. However, they must still be
+defined outside the class body without an initialiser! They may be used in the 
+class definition in lieu of a constant value, e.g., as default value for a member 
+function argument.
+
+</p></li><li>
+<p>Value semantics makes copies of objects while reference semantics makes copies
+of pointers to objects. A class that has data members of pointer type will make copies
+of the objects not just the pointers when using value semantics for copying.
+In C++ you should always prefer value semantics unless you have good reasons to 
+use reference semantics. Java uses reference semantics as default.
+
+
+</p></li><li>
+<p>The Big Three in C++: copy constructor,
+copy  assignment operator and destructor. 
+The Rule-of-Three becomes Rule-of-Five in
+C++11: copy constructor, move constructor,
+copy assignment operator, move assignment operator
+ and destructor.  Explicit copy
+control is usually required for proper handling of data members of pointer type. However,
+it is also likely to be required if a class uses resources that require special treatment,
+e.g., file handles.
+
+</p></li><li>
+<p>
+Add the following to HasPtrValueLike.h:
+</p><pre>HasPtr(HasPtr &amp;&amp;p): ps (p.ps), i(p.i) { p.ps = nullptr; }
+
+HasPtr&amp; operator=(HasPtr &amp;&amp;);
+</pre>
+
+Add the following definition of the move-assignment operator
+to  HasPtrValueLike.cpp:
+<pre>HasPtr&amp; HasPtr::operator=(HasPtr &amp;&amp;rhs) {
+        if (this != &amp;rhs) {
+                delete ps;    
+                ps = rhs.ps; 
+                i = rhs.i;
+                rhs.ps = nullptr;
+        }   
+        return *this;   
+}
+</pre>
+
+
+
+</li></ol>
+
+<p>&nbsp;</p>
+<hr align="left">
+
+</td></tr></tbody></table>
+
+
+</body></html>Ytext/htmlUUTF-8Tmain_Bhttps://www.cse.unsw.edu.au/~cs6771/16s2/solutions/tute04_sol.html    ( : P n … ”!â!ì!ò!÷                           "<

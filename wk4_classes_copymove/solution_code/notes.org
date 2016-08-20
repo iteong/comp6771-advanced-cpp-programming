@@ -1,0 +1,226 @@
+Tute 3 Notes
+
+* Why is it important to use a member initializer list?
+
+  Some things can only be initialised with an initialiser list:
+  - Other constructor or parent class constructor.
+  - Member reference variables.
+
+  class A
+  {
+     std::string& val_;
+     public:
+     A(std::string& ref): val_{ref} { } // Ok
+     A(std::string& ref) { val_ = ref; } // Compiler error
+  };
+
+  For interest:
+
+  Exceptions can be caught with a function-try block
+
+  A::A(std::string& ref): try val_{ref}
+  {
+
+  }
+  catch (...)
+  {
+     std::cerr << "Here" << std::endl;
+  }
+
+
+
+* Why is uniform initialisation prefered in C++11?
+
+** Old style () is very overloaded.
+
+  - Is A() a function call or intialisation of an A object?
+
+  - Most Vexing Parse
+
+    Avoids confusion with function prototype declaration ().
+
+    int main()
+   {
+
+       int test();
+       int test;
+       Myclass test2();
+    }
+
+    This can be interpreted as a declaration for function test that
+    has no parameters and returns an int or default intialisation of
+    variable of type int.
+
+    Rule: If it can possibly be interpreted as a function prototype,
+    then it will be.
+
+    See: https://www.informit.com/guides/content.aspx?g=cplusplus&seqNum=439
+
+** Provides a consistent syntax for (almost) all circumstances.
+
+  Some exceptions:
+
+  - Container construction:
+
+    std::vector<int> v{3}; create vector with single element 3.
+
+    std::vector<int> v(3); create vector of size 3.
+
+  - Implicit type narrowing:
+
+    int i {2.0}; // Error
+    int i = 2.0; // Compiles but not good
+    int i(2.0); // Compiles but not good
+
+    You shouldn't do this anyway as you should always explicitly cast: e.g.,
+
+    int i {static_cast<int>(2.0) }; // Good
+
+
+
+* What does it mean for a class or function to be const correct?
+
+** Why
+
+  - Method to clearly define which functions can change values. It is
+    an important tool to prevent errors.
+
+  - Simple rule of thumb: if it doesn't need to modify data then make
+    it const.
+
+** Simple examples
+
+    // Class member function that cannot change internal class data.
+    void A::somefuntion() const;
+
+    // Arbitary function cannot change parameter value
+    void somefunction(const std::string& name);
+
+  - Can use "mutable" to get around const-correctness in a class
+    object. But only do it in special cases (eg., caching to improve
+    performance).
+
+    class A
+    {
+    public:
+      const std::string& name() const;
+      ...
+    private:
+      mutable std::string cached_name_;
+      ...
+    };
+
+    const std::string& A::name() const
+    {
+       if (cached_name_.empty()) cached_name_ = .....;
+       return cached_name_;
+    }
+
+** Static member functions
+
+Static member functions cannot be declared const.
+eg.
+   class A
+   {
+      void f();
+      static void sf() const; // ERROR
+      static int i;
+   };
+
+   void A::sf() const { return i; } // ERROR
+
+The reason is that static member function doesn't have a this
+pointer. For non-static class member functions there is a hidden first
+parameter:
+
+     "void A::f();" gets turned into "f(A* this)".
+
+     "void A::f() const;" gets turned into "f(const A* this)".
+
+"static void f() const" wouldn't make sense because there is no *this.
+
+
+* Move semantics
+
+** Why
+
+  - A natural looking declaration:
+
+       std::vector<int> copy(const std::vector<int>& other);
+
+  - But returning a large object from a function is expensive in
+    C++98. Copy will create an object and push it onto the stack as
+    the return value. Then the calling program will have to copy it
+    off the stack.
+
+  - So typically in C++98 you see code like:
+
+      void copy(const std::vector<int>& from, std::vector<int>& to);
+
+  or
+
+      std::vector<int> *copy(const std::vector<int>& other);
+
+
+  - C++11 allows for the natural declaration to be efficient.
+
+  - Note: Most compilers will perform "return value optimisation" if
+    they can (see
+    https://en.wikipedia.org/wiki/Return_value_optimization). This is
+    typically enable even when optimisations have been turned
+    off. However, to highlight the difference we explicitly disable
+    this feature with the -fno-elide-constructors option. See the
+    Makefile.
+
+
+** Rvalue-Lvalue
+
+int i = 1;
+int& getRef() = 3;
+
+Lvalue: A memory location whose address can be taken. i and getRef() are lvalues.
+
+Rvalue: rvalue is not an lvalue - by defn :). 1,3 are rvalues.
+
+a * b = 4;  // BAD
+
+a and b are lvalues but a * b is an rvalue.
+
+*Main point: Rvalues are temporary objects*
+
+- C++11 introduces Rvalue references with the && syntax so that we can
+  detect cases when returning temporary objects.
+
+** Move constructor/operator
+
+- A move constructor/operator is declared with rvalue references to
+  guarantee that the object being referenced is temporary. Therefore
+  it is ok to "steal" data from the temporary object.
+
+- Note: a rvalue reference is an lvalue, so need std::move() to make
+  sure it is handled as a rvalue.
+
+
+
+** Reference:
+
+Good source:
+
+http://www.cprogramming.com/c++11/rvalue-references-and-move-semantics-in-c++11.html
+
+
+
+* Create a move constructor, should you increase the object count too?
+
+  Yes. The original object still exists until it is destructed
+  (usually when it goes out of scope).
+
+
+* Create a copy assignment operator, should the object count change?
+
+  No.
+
+
+* Create a move assignment operator, should the object count change?
+
+  No.
