@@ -11,7 +11,7 @@
 
 // Create a constructor for the car that takes in the manufacturer name (e.g. Toyota) and the number of seats.
 // Ensure that your constructor uses a member initializer list and uniform initialisation. 
-Car::Car(std::string manufacturer, unsigned int numSeats) 
+Car::Car(const std::string& manufacturer, unsigned int numSeats) 
         : manufacturer_{manufacturer}, numSeats_{numSeats} {
 
             ++ count_; // creating a static data member to keep count of number of car objects created

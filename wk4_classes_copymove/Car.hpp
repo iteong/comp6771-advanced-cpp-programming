@@ -11,7 +11,7 @@ class Car {
 
 public:
 	Car(); // empty constructor
-	Car(std::string manufacturer, unsigned int numSeats);
+	Car(const std::string& manufacturer, unsigned int numSeats);
 	~Car(); // destructor
 
 	static unsigned int get_count(); // get count of objects (cars) created, declare static here but don't need in .cpp file (or else double static definition)

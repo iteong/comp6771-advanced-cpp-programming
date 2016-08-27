@@ -1,0 +1,251 @@
+Tutorial 4. Operator overloading and Lambda functions
+
+http://www.cse.unsw.edu.au/~cs6771/15s2/tuts/week5.html
+
+* Tute 3 recap
+
+Question from last week about return-value-optimisation
+(RVO). Compiler will perform RVO even with optimisations turned off
+(-O0). Extra flag to turn off RVO.
+
+I'm not a compiler guy but this is a simple example of how RVO might
+work:
+
+    MyClass afunction()
+    {
+        MyClass x;
+        ...
+        return x;
+    }
+
+can be turned into:
+
+    void afunction(MyClass& x)
+    {
+        ...
+    }
+
+But this isn't as simple:
+
+    MyClass afunction()
+    {
+        if (some_condition)
+        {
+           MyClass x;
+           ...
+           return x;
+        }
+        else
+        {
+           MyClass y{e,r};  // Initialised by non-default constructor
+           ...
+           return y;
+        }
+    }
+
+To try the same trick here would depend on the existence of an
+assignment operator for MyClass. Whether it can be done efficiently
+would depend on a move assignment operator.
+
+
+* Overloading operators
+
+A lot of debate about when to overload and when not to. Be sparing.
+
+Operators can be overloaded as member and non-member functions. If
+non-member function then may need to be a "friend" to access private
+data. The compiler checks for member function overload first.
+
+Some references:
+
+http://en.cppreference.com/w/cpp/language/operators
+
+
+http://www.learncpp.com/cpp-tutorial/91-introduction-to-operator-overloading/
+
+
+** Overloading comparison operators
+
+Comparison (and other binary) operators should be overloaded as
+non-member functions. This allows for implicit conversion of both the
+left and right hand side.
+
+   MyString
+   {
+      MyString(const char* s);
+      bool operator==(const MyString& other) const;
+   }
+
+   const char* a = "hello";
+   const MyString b = "hello";
+
+   if (a == b){ } // error
+   if (b == a){ } // ok
+
+
+Not sure I fully understand the following explanation when it comes
+symmetry violation and hindering optimisation.
+
+https://www.informit.com/guides/content.aspx?g=cplusplus&seqNum=523
+
+
+** Overloading user-defined conversion
+
+Note: lots of personal opinion here...
+
+- Got to be the one of the ugliest bits of C++ syntax.
+
+- Good explanation of when you might want to do for:
+
+  http://stackoverflow.com/questions/1307876/how-do-conversion-operators-work-in-c
+
+- Basically, there are very few circumstances where these type
+  conversion operators make sense; casting std::string to const char *
+  being one of the few.
+
+- It is useful when you have two different representations of the same
+  data.
+
+- Use sparingly! It can make for less-readable code and can lead to
+  unexpected casting results. See the example code where having a type
+  conversion to std::string as well as an output stream overload
+  operator means that it is somewhat unclear what will be output.
+
+- So, if you are going to do it maybe consider using the C++11
+  explicit qualifier to at least force the use of static_cast.
+
+
+* Lambda expressions
+
+One of the best explanations:
+
+http://www.cprogramming.com/c++11/c++11-lambda-closures.html
+
+
+** Simple example
+
+To sort in reverse order to the default:
+
+    std::sort(books.begin(), books.end(),
+
+              [](const Book& a, const Book& b)
+              {
+                  return !(a < b);
+              });
+
+*** Implicit return type
+
+Note here the return type is implicit. Only works with single return
+call. So above example is equivalent to:
+
+    std::sort(books.begin(), books.end(),
+
+              [](const Book& a, const Book& b) -> bool
+              {
+                  return !(a < b);
+              });
+
+
+** Lambda capture list
+
+- Capture list allows you to refer to variables in outer scope from
+  within the lambda function.
+
+- How to capture:
+
+    [] captures nothing
+
+    [&] captures all automatic variables in the body of the lambda by
+        reference
+
+    [=] captures all automatic variables in the body of the lambda by
+        value
+
+    [a,&b] where a is captured by value and b is captured by
+           reference.
+
+    [this] captures the this pointer by value
+
+  Taken from: http://en.cppreference.com/w/cpp/language/lambda
+
+- Capture by reference is possibly the most useful form.
+
+- "Closure": fancy term for using a capture list (AFAIK).
+
+
+** Difference between capture list and parameter list
+
+
+- What you can have in the parameter list is restricted by the
+  requirements of the caller.
+
+  For example, the comparator function required by std::sort needs to
+  take two objects of the same type and return a bool.
+  e.g.,
+
+      bool compare(const Book& a, const Book& b);
+
+- The capture list allows you to include other thing.
+
+  For example in the book example. We may want to sort by price except
+  for some special author (which is not known at compile time).
+
+      void special_sort(std::vector<Book> books, const std::string& special)
+      {
+          std::sort(books.begin(), books.end(),
+               [&special](const Book& a, const Book& b)
+               {
+                   if (a.author() == special) return true;
+                   return a.price() < b.price();
+               });
+      }
+
+
+** Why are lambda's (arguably) the best thing to happen to C++.
+
+To achieve above behaviour in pre-C++11 code need to explicitly
+create a function object (ie. functor):
+
+       struct MyComparator
+       {
+          MyComparator(...);
+
+          bool operator()(const Book& a, const Book& b)
+          {
+               return !(a < b);
+          }
+       };
+
+
+- This is cumbersome because:
+   - Lots of boilerplate.
+   - Need to think of meaningful class names.
+   - Less readable as not defined where it is used.
+   - Created for a class that is only used once.
+
+- The result is that you often avoid using std algorithms (see
+  <algorithm>) because it is too painful.
+
+- Lambda allows you to avoid all these negatives.
+
+- Note: in some ways lambdas are just syntactic sugar. But still
+  really great! The compiler will create a functor for you so you
+  can avoid the annoying aspects of writing functors.
+
+
+* Random stuff
+
+- new C++11 raw strings syntax:
+
+  http://en.cppreference.com/w/cpp/language/string_literal
+
+  The form is: R"<delimiter>( ..... )<delimiter>"
+  <delimiter> can be replaced by any string that does not contain )<delimiter>".
+
+  eg.
+      std::string mystr1 = R"(this is a raw "string" - no escaping required)";
+      std::string mystr2 = R"xxx(this is a raw "string" - no escaping required)xxx";
+
+  Raw string are particularly useful now that C++ has a regular
+  expression library (see <regex>).
+ 
