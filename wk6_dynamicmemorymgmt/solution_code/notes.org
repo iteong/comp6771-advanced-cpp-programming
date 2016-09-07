@@ -1,0 +1,222 @@
+Tutorial 5. Dynamic Memory Management
+
+http://www.cse.unsw.edu.au/~cs6771/15s2/tuts/week6.html
+
+Topics:
+- Exception Handling
+- Lamda Functions
+- Shared and Weak Pointers
+- Unique Pointers and Ownership
+- Trailing Return Types
+
+* Smart pointers
+
+** Why
+
+- Smart pointers wrap raw pointers and provide a reference counting
+  mechanism for managing memory.
+
+- When the smart pointer goes out of scope (and the reference count
+  reaches 0) then the underlying object is automatically destroyed.
+
+- Advantages:
+  - Memory leaks are dramatically reduced (if not totally eliminated).
+  - Rarely need to write destructors.
+
+- With C++11 there is (almost) no reason to use raw pointers.
+
+** Standard smart pointers
+
+- Smart pointers overload the * and -> operators, so that they behave
+  as a normal pointer.
+
+- NOTE: The compiler won't stop you doing something stupid. So
+  deferencing a smart pointer that is null will get you into trouble!
+
+- Good reference:
+
+  http://herbsutter.com/2013/05/29/gotw-89-solution-smart-pointers/
+
+- Standard library supplies two basic types of smart pointers:
+
+*** std::shared_ptr
+
+  - Used for maintaining shared ownership. Cicular references are a
+    problem for reference counting mechanisms as they will prevent an
+    object being destroyed.  std::weak_ptr is a helper class for
+    preventing cycles. A weak pointer can be turned into a shared
+    pointer but by itself will not prevent memory being destroyed.
+
+  - Should usually use std::make_shared<>() to created std::shared_ptr
+    objects: 1) it's cleaner, 2) more efficient.
+
+  - weak_ptr to shared_ptr. Can use expired() if only want to test if
+    object is deleted. Use lock() to get shared_ptr, which will return
+    nullptr if object is deleted.
+
+  - Note: nullptr is C++11 replacement for NULL.
+
+
+*** std::unique_ptr
+
+  - Note: std::auto_ptr doesn't work with STL containers. It is
+    deprecated and should never be used.
+
+  - Unique pointer is used for maintaining single ownership of an
+    object. Ownership cannot be copied (so no copy constructor or copy
+    assignment) but can be transferred (using move semantics).
+
+  - Ownership is transferred using std::move(). Recall from last week
+    what std::move() does. It doesn't actually move anything. Instead
+    it turns an lvalue into an rvalue which allows for a function that
+    takes rvalue references (&&) to be used. It is the called function
+    that does the actual moving.
+
+  - C++14: Should use std::make_unique<>(). For C++11 use:
+
+      template<typename T, typename ...Args>
+      std::unique_ptr<T> make_unique( Args&& ...args )
+      {
+         return std::unique_ptr<T>( new T( std::forward<Args>(args)... ) );
+      }
+
+  - make_unique<> is important for exception safety. For example, the
+    following is not exception safe:
+
+      func(std::unique_ptr<X>{new X{}}, (std::unique_ptr<Y>{new Y{}});
+
+  - C/C++ does not dictate the order in which the arguments are
+    called. So the following is a valid sequence of events: new X{},
+    new Y{}, std::unique<X>{}, std::unique<Y>{}. If the call to new
+    Y{} throws an exception then the X{} object will not be cleaned
+    up. For more details se::
+
+      http://www.gotw.ca/gotw/056.htm
+
+  - Note also for explanation of the perfect forwarding problem see:
+
+    http://thbecker.net/articles/rvalue_references/section_07.html
+
+
+** Passing around smart_ptrs
+
+- Good source:
+
+  http://herbsutter.com/2013/06/05/gotw-91-solution-smart-pointer-parameters/
+
+- Quotes:
+
+  - Guideline: Don’t pass a smart pointer as a function parameter
+    unless you want to use or manipulate the smart pointer itself,
+    such as to share or transfer ownership.
+
+  - Guideline: Prefer passing objects by value, *, or &, not by smart
+    pointer.
+
+  - Note: prefer & to * unless you need to detect a null pointer.
+
+- std::shared_ptr
+
+  - There can be performance implications for passing shared_ptr. The
+    increment/decrement of the reference count and atomic locking for
+    multi-threaded applications.
+
+  - Quote: "... an essential best practice for any reference-counted
+    smart pointer type is to avoid copying it unless you really mean
+    to add a new reference".
+
+
+* decltype
+
+- In case you thought decltype was straightforward... read this to
+  understand some of the subtleties:
+
+  http://www.drdobbs.com/cpp/a-note-about-decltype/231002789
+
+- My feelings about decltype and what I would consider good practice:
+
+  - You want code to be readable and maintainable. With this in mind
+    you should use decltype sparingly. Don't use it simply because you
+    can.
+
+  - decltype is useful in cases where it is not possible to directly
+    provide the return type. For example, in template functions where
+    the return type needs to be deduced from the types of the
+    parameters (see tute code).
+
+
+* Tutorial question 11 and 12
+
+- What would happen to a locker object that is owned by a student
+  object when the student object is deleted.
+
+    Locker object is automatically deleted.
+
+- Would it return to the school's colletion of Locker objects? How may
+  we achieve this requirement?
+
+    No it doesn't return to the schools collection. To get it to do
+    this then the most consistent (to fit in with the design of the
+    rest of the system) would be to have a School::releaseLocker()
+    function that calls a School::Student::releaseLocker() function.
+
+- Consider the findCourse function:
+
+      auto School::findCourse(const std::string& courseCode) const -> decltype(courses.begin())
+
+- What is the purpose of the trailing return type? What does decltype tell the compiler?
+
+  - decltype() extracts the type from an expression.
+
+  - Note 1): unlike auto decltype() does not throw away the const and
+    & qualifiers.
+
+  - Note 2): a subltety in above code. Because the function is const so
+    decltype(course.begin()) is actually a const_iterator not an iterator.
+
+  Good reference:
+
+  http://www.cprogramming.com/c++11/c++11-auto-decltype-return-value-after-function.html
+
+
+* Macros and compilers
+
+- If you are serious about C++ you will eventually have to deal with
+  different compilers and environments (e.g., different versions of
+  standard libraries).
+
+** Compiler directives/macros
+
+- C++11 discourages the use of preprocessor macros to define constants
+  (since there is no type safety or namespacing). However preprocessor
+  macros are still useful for changing the compilation process, for
+  example due to compiler support for features.
+
+- For example, GCC 4.8.x (libstdc++) doesn't implement
+  std::vector<T>::erase(const_iterator). We can workaround this
+  bug/missing-feature.
+
+** difference between #if and #ifdef
+
+- #if checks for the value of some symbol. #ifdef checks for the
+  existence of a symbol.
+
+- "#ifdef X" and "#if defined(X)" do the same thing.
+
+** Implementation of Standard Libraries
+
+- Note: libstdc++ is gcc's implementation of the standard library. On
+  ubuntu (maybe linux generally?) by default Clang/LLVM will also use
+  libstdc++. However, there are other implementations.
+
+- Some open source C++ standard libary implementations:
+
+  - https://gcc.gnu.org/libstdc++/
+  - http://libcxx.llvm.org/
+
+- Standard library implementations are API compatible (as you would
+  expect) but not ABI compatible. Don't mix standard library
+  implementations. This can bite you when it comes to inlining:
+
+http://stackoverflow.com/questions/12542971/using-libstdc-compiled-libraries-with-clang-stdlib-libc
+

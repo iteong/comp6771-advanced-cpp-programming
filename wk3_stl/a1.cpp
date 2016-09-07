@@ -63,7 +63,7 @@ int main()
 	std::cout << std::endl;
 
 	auto bii = std::back_insert_iterator<decltype(nums_l)>{nums_l}; // decltype finds out what is the type and replaces expression with actual type
-	// normaul way is use <std::list<int> >{nums_l}
+	// normal way is use <std::list<int> >{nums_l}
 
 	// can also be this instead of for loop => std::copy(begin(nums_a), end(nums_a), bii);
 	for (const auto& e : nums_a) { // go over int array to get values to map into int list

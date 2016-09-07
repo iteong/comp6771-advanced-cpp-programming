@@ -1,0 +1,198 @@
+bplist00Ñ_WebMainResourceÕ	
+_WebResourceFrameName^WebResourceURL_WebResourceData_WebResourceMIMEType_WebResourceTextEncodingNameTmain_Bhttps://www.cse.unsw.edu.au/~cs6771/16s2/solutions/tute06_sol.htmlO\<html><head><title>COMP6771, Tutorial - Week 6</title></head>
+<body alink="#660000" bgcolor="#ffffff" link="#800066" vlink="#000066" marginwidth="10" marginheight="0">
+
+<table align="center" border="0" width="95%"><tbody><tr><td>
+
+<h2><p></p><center><b>
+COMP6771 â€“ Advanced C++ Programming<br>
+Session 2, 2016
+</b></center><p></p></h2>
+
+<h2><p></p><center><b>Tutorial â€“ Week 6<br>Solutions</b></center><p></p></h2>
+
+<hr align="left">
+
+<h3>Tutorial Solutions</h3>
+
+Please let us know if you find any mistakes in these solutions.
+
+<ol>
+
+<li>
+<p>
+A better solution is:
+</p><pre>string find_addr(const list<employee>&amp; emps, const string&amp; name) { 
+    for(auto i = emps.cbegin();  i != emps.cend(); ++i) { 
+        if(i-&gt;name() == name) { 
+            return i-&gt;addr();
+        }   
+    }   
+    return ""; 
+}
+</employee></pre>
+<ul>
+<li> <i>The parameters are passed by value</i>. In general, it is preferable to pass a read-only parameter 
+by const&amp; if you are only going to read from it (not make a copy of it).
+</li><li> <i>The iterator increment uses postincrement</i>, which is typically implemented as:
+<pre> 
+T T::operator++(int)() {
+    auto old = *this; // remember our original value (in a temporary)
+    ++*this;          // always implement postincr in terms of preincr
+    return old;       // return our original value
+}
+</pre> 
+For consistency, always implement postincrement in terms of preincrement, otherwise your users will get surprising (and often unpleasant) results.
+</li><li> <i>The comparison might use an implicit conversion.</i>
+The employee class isn't shown in the problem, but we can deduce a few things about it. For this code to work, employee likely must either have a conversion to string or a conversion constructor taking a string. Both cases create a temporary object, invoking either operator== for strings or operator== for employees. (Only if there does happen to be an operator== that takes one of each, or employee has a conversion to a reference, that is, string&amp;, is a temporary not needed.)
+<p> 
+In general, watch out for hidden temporaries created by implicit conversions. One good way to avoid this is to make constructors and conversion operators explicit by default unless implicit conversions are really desirable.
+</p></li></ul>
+
+</li><li>
+<p>
+The constexpr specifies that a variable or function
+can be computed at compile time. For this problem, two modifications
+are made.  
+</p><pre>class Circle
+{
+public:
+  constexpr Circle (int x, int y, int radius) :
+         _x( x ), _y( y ), _radius( radius ) {}
+  constexpr double getArea () {
+    return _radius * _radius * 3.1415926;
+  }
+private:
+  int _x; 
+  int _y; 
+  int _radius;
+};
+
+int main() {
+  constexpr Circle c( 0, 0, 10 );
+  constexpr double area = c.getArea();
+}
+</pre>
+First, we need to declare the constructor as a constexpr, 
+and second, we need to declare getArea as  a constexpr. 
+Declaring the constructor as a constexpr allows it to be 
+run at compile time as long as it consists only of member 
+initialisations using other constexpr constructors 
+(a compiler-generated default constructor can also be treated as constexpr, assuming all its members have constructors that are constexpr). Declaring getArea as a constexpr allows it to
+be called at compile time:
+<p>
+If you declare a class member function to be a constexpr, 
+that marks the function as 'const' as well. (Clearly it must be const if it is constexpr, because a constexpr function cannot modify the object in any way.) If you declare a variable as 
+a constexpr, that in turn marks the variable as const. 
+However, it doesn't work the other way--a const function is not a constexpr, nor is a const variable a constexpr.
+
+</p></li><li> The program counts the number of ints in a given vector that are divisible by 2.
+Using a lambda expression, the previous program can be simplified to:
+<pre>int main() {
+ vector<int> v{1,2,3,4,5,6};
+ auto c = count_if(v.begin(), v.end(), [](int i){return i%2 == 0;});
+ cout &lt;&lt; c &lt;&lt; endl;
+}
+</int></pre>
+Some advantages with using a lambda expressions are:
+<ul>
+<li> It's much less verbose.
+</li><li> It doesn't introduce a new name just for a temporary use, resulting in less name pollution.
+</li><li>
+Frequently (not in this example, though) the name of the function object (or functor) class is much less expressive than its actual code. Placing the code closer to where it's called improves code clarity.
+</li></ul>
+
+
+</li><li>
+<p>
+</p><pre>class employee {
+public:
+  float salary() const { /* ... */ }
+};
+
+int main() {
+  double minimum_salary = 1000;
+  double maximum_salary = 1.25 * minimum_salary;
+  vector<employee> employees;
+
+  find_if(employees.begin(), employees.end(),
+   [&amp;](const employee&amp; emp)  
+   {return emp.salary() &gt;= minimum_salary &amp;&amp; 
+   emp.salary() &lt; maximum_salary;});
+}
+</employee></pre>
+Note that <tt>minimum_salary</tt> and <tt>maximum_salary</tt>
+are captured by reference. There is no longer a need
+to define a separate functor class any more.
+
+</li><li>
+<p>
+The answer can be found at <a href="http://herbsutter.com/2013/05/29/gotw-89-solution-smart-pointers/">GotW #89 Solution: Smart Pointers</a>.
+ Here is the guideline
+copied from this article:
+<q>
+Prefer to use the standard smart pointers, unique_ptr by default and shared_ptr if sharing is needed. They are the common types that all C++ libraries can understand. Use other smart pointer types only if necessary for interoperability with other libraries, or when necessary for custom behavior you cannot achieve with deleters and allocators on the standard pointers.
+</q>
+
+
+
+</p></li><li>
+<p>A callable object is an object that can be used to call some functionality, including
+funcitons and pointers to fnuctions, function objects of a class that overloads
+the call operator (<tt>()</tt>), objects created by <tt>bind</tt> and objects created by
+lambda expessions.
+Callable objects are used heavily when working with the STL algorithms.
+They may also be used to create stateful functions.
+
+</p></li><li>
+<p>The expression <tt>bind2nd(modulus&lt;int&gt;(), 2)</tt> binds the value 2 to the
+second argument of the binary function object <tt>modulus</tt>, essentially transforming
+it into an unary function object. The first argument is supplied by the algorithm
+<tt>find_if</tt> as it examines the container elements. The result of the expression
+will be 1 (i.e., <i>true</i>) for odd values, since the operation performed is <i>elem</i> % 2.
+By applying <tt>not1</tt> we reverse the truth value of the expression, so that it will
+return <i>true</i> for even values (i.e., !(<i>elem</i> % 2)).
+
+
+</p></li><li>
+<pre>   int count = count_if(ivec.begin(), ivec.end(), bind2nd(greater&lt;int&gt;(), 100));
+</pre>
+
+</li><li>
+<pre>   struct cmp {
+     bool operator()(map&lt;string, string&gt;::value_type elem1,
+                     map&lt;string, string&gt;::value_type elem2) {
+       return (elem1.first == elem2.first);
+     }
+   };
+
+   pair&lt;map&lt;string, string&gt;::iterator, map&lt;string, string&gt;::iterator&gt; ip;
+   if (imap1.size() &lt; imap2.size())
+     ip = mismatch(imap1.begin(), imap1.end(), imap2.begin(), cmp());
+   else
+     ip = mismatch(imap2.begin(), imap2.end(), imap1.begin(), cmp());
+</pre>
+The custom comparator is required because map values are stored as pairs and we only
+wish to compare the keys.
+
+</li><li>
+<pre>  transform(dvec.begin(), dvec.end(), dlst.begin(), back_inserter(ddeq), plus&lt;double&gt;());
+</pre>
+
+
+</li><li>
+<pre>   vector&lt;int&gt; ivec(10, 2);
+   int product = accumulate(ivec.begin(), ivec.end(), 1, multiplies&lt;int&gt;());
+   cout &lt;&lt; product &lt;&lt; endl;
+</pre>
+
+</li></ol>
+
+
+<p>&nbsp;</p>
+<hr align="left">
+
+</td></tr></tbody></table>
+
+
+</body></html>Ytext/htmlUUTF-8    ( ? N ` v ” ™ Þ>H                           N
