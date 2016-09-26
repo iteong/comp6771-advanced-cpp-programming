@@ -1,3 +1,7 @@
+/**
+ * Callum Howard 23rd Sept
+ */ 
+
 #include <memory>
 #include <vector>
 #include <algorithm>
@@ -52,11 +56,12 @@ private:
 	std::vector<ItemContainer> items;
 };
 
+// question from class
 template <typename T>
 class LibraryItemIterator {
 public:
   typedef std::ptrdiff_t                     difference_type;
-  typedef TODO: AN_ITERATOR_TAG          iterator_category;
+  typedef std::forward_iterator_tage         iterator_category; // create a forward iterator since need to iterate forward in a vector
   typedef T                                  value_type;
   typedef T*                                 pointer;
   typedef T&                                 reference;
@@ -67,10 +72,63 @@ public:
   bool operator==(const LibraryItemIterator& other) const;
   bool operator!=(const LibraryItemIterator& other) const { return !operator==(other); }
 
-  // TODO: constructor
+// TODO: constructor
+// the default begin and end has its own iterator class that moves to point to next element in vector, so need constructor so that same class
+// as vector
+LibraryItemIterator<T>::LibraryItemIterator(std::shared_ptr<std::list<std::shared_ptr<t> > > v = nullptr);
+
+template <typename T> // Scope is LibraryItemIterator<T>
+LibraryItemIterator<T>::LibraryItemIterator(
+		std::shared_ptr<std::list<std::shared_ptr<t> > > v = sorted_pointer_); // a pointer to a list of pointers pointing to different elements in a vector
+
 private:
   // TODO: private data members.
 };
+
+// TODO: Q11 for begin and end
+template <typename T, typename U> // calling begin might be a lot of work, esp on unordered set as it is not sorted
+LibraryItemIterator<T>::Library<T, U>::begin() { // members of Library, return Library Iterator
+	auto sorted_list_ptr = std::make_shared(std::list<std::shared_ptr<T> > >());
+	for (const auto& it : items) {
+		soted_pointers_->push_back(it.getItemPtr()); // getItemPtr = in item container, which is a subclass of Library
+	}
+	return LibraryItemIterator<T>{sorted_list_ptr};
+}
+
+template <typename T, typename U>
+LibraryItemIterator<T>::Library<T, U>::end() {
+	return LibraryItemIterator<T>{};
+}
+
+// TODO: Q13 for operator++ =====> post-increment and pre-increment may both be called, so define both be better but define post in terms of pre
+template <typename T, typename U>
+LibraryItemIterator& LibraryItemIterator<T>::operator++() {
+	sorted_pointers_->pop_front(); // take off first element in iterator list that points to vector elements, so iterator pointing to iterator list defaults to second element
+	if (sorted_pointers_->empty()) {
+		sorted_pointers_ = nullptr; // sorted_pointers is a linked list that serves as an iterator list, need to remove it coz if there is no more of it (all destroyed), end() will be true
+	}
+	return *this;
+}
+
+// TODO: Q14 for operator* (ranged-based operator to do range-based for-loops)
+template <typename T, typename U>
+typename LibraryItemIterator<T>::reference LibraryItemIterator<T>::operator*() const { // dereference can be const coz we dun need to modify it
+	return *(sorted_pointers_->front()); // when we dereference the iterator which is at ->, it will return object in vector (*)
+}
+
+// TODO: Q15 for equality operator== (dereferencing, not multiplication)
+template <typename T, typename U>
+bool LibraryItemIterator<T>::operator==(const LibraryItemIterator &other) const {
+	if (sorted_pointers_ == others.sorted_pointers_) { return true; }
+
+	// if either iterators are null
+	if (sorted_pointers_ == nullptr or other.sorted_pointers_ == nullptr) {
+		return false;
+	}
+
+	// if iterators are the same when dereferenced
+	return (*sorted_pointers_ == *other.sorted_pointers_);
+}
 
 // method to add a new item to the library.
 template <typename T, typename U>
