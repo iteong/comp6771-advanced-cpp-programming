@@ -1,0 +1,146 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+	<title>CS6771 Tutorial - Week 12</title>
+</head>
+<body>
+<h2>CS6771 Tutorial 2016</h2>
+<h2>Week Twelve</h2>
+
+<h3>Object Oriented Programming</h3>
+
+<strong>Topics Covered:</strong>
+<ul><li>Constructors</li>
+<li>Destructors</li>
+</ul>
+
+<strong>Consider the following code:</strong>
+<blockquote>
+<pre>
+#include &lt;iostream&gt;
+
+class A1 {
+public:
+  A1() { 
+    std::cout &lt;&lt; "A1 "; 
+  }
+};
+
+class A2 {
+public:
+  A2() {
+    std::cout &lt;&lt; "A2 ";
+    a1 = new A1();
+  }
+private:
+  A1 *a1;
+};
+
+class A3 {
+public:
+  A3() {
+    std::cout &lt;&lt; "A3 ";
+    a1 = new A1();
+    a2 = new A2();
+  }
+private:
+  A1 *a1;
+  A2 *a2;
+};
+
+int main() {
+  A3 *a3 = new A3();
+}
+</pre>
+</blockquote>
+<ol>
+<li>
+Work out on paper/whiteboard what the output of this program is. 
+</li>
+<li>Change the declaration of class A3 to:
+<pre>
+class A3  : public A2 {
+</pre>
+Work out what the new output is. </li>
+<li>Why are the outputs different?</li>
+</ol>
+
+<strong>Consider the following code:</strong>
+<blockquote>
+<pre>
+#include &lt;iostream&gt;
+
+struct X { 
+  ~X() { std::cout &lt;&lt; "~X() "; }
+};
+
+struct Y { 
+  ~Y() { std::cout &lt;&lt; "~Y() "; }
+};
+
+class A { 
+  X x;
+public:
+  ~A() { std::cout &lt;&lt; "~A() "; }
+};
+
+class B : public A { 
+  Y y;
+public:
+  ~B() { std::cout &lt;&lt; "~B() "; }
+};
+
+int main() { 
+  B b; 
+}</pre>
+</blockquote>
+<ol>
+<li>On paper/whiteboard work out the output of this program.</li>
+<li>Change the object B in main to a B*
+<pre>B* b = new B; </pre>
+What is the output now? Why is the output different?</li>
+</ol>
+
+<strong>Consider the following code:</strong>
+<blockquote>
+<pre>
+#include &lt;list&gt;
+#include &lt;iostream&gt;
+
+class X {
+public:
+  X() { std::cout &lt;&lt; "ctor "; }
+  X(const X&amp;) { std::cout &lt;&lt; "copy-ctor "; }
+  ~X() { std::cout &lt;&lt; "dtor "; }
+};
+
+int main() {
+  std::list&lt;X*&gt; l;
+  X *x = new X();
+  X y;
+  l.push_back(x);
+  l.push_back(&amp;y);
+}
+</pre>
+</blockquote>
+<ol>
+<li>On paper/whiteboard work out the output of this program.</li>
+<li>Add the follow to the end of main:
+<pre>  
+std::list&lt;X&gt; l2;
+l2.push_back(y);</pre>
+Why is the copy constructor now called (and wasn't earlier), why is there an extra dtor print?</li>
+</ol>
+<strong>Revision Questions</strong>
+<ol>
+<li>What are the differences (e.g., types, usage, rvalues, lvalues, objects, memory usage) between an int, a pointer to an int, and a reference to an int?</li>
+<li>Explain the differences in the meaning and effect of using <em>const</em> in the following member function prototypes: 
+<pre>
+const int&amp; getValueAtIndex(int i);
+int getValueAtIndex(const int i);
+int getValueAtIndex(int i) const; 
+</pre></li>
+</ol>
+</body>
+</html>
+

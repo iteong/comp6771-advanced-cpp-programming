@@ -1,0 +1,243 @@
+<html><head><title>COMP6771, Tutorial - Week 11</title></head>
+<body alink="#660000" bgcolor="#ffffff" link="#800066" vlink="#000066">
+
+<table align="center" border="0" width="95%"><tbody><tr><td>
+
+<h2><p></p><center><b>
+COMP6771 &#8211; Advanced C++ Programming<br>
+Session 2, 2016
+</b></center><p></p></h2>
+
+<h2><p></p><center><b>Tutorial &#8211; Week 11</b></center><p></p></h2>
+
+<hr align="left">
+
+<h3>Aims</h3>
+This tutorial will give you a chance to practise working with object-oriented programming and develop
+a better understanding about the key concepts involved such as virtuals, polymorphism, dynamic binding,
+covaraint return types, C++ name hiding (in the context of inheriance) and copy control (in the context of
+inheritance).
+<p>
+The questions cover the material from Chapter 15.
+<h3>Tutorial Questions</h3>
+
+<ol>
+<li> Draw the vtables for classes A, B and C:
+<pre>
+class A {          
+public:               
+        virtual void f(int) {}
+        virtual int g() {}
+        void a() {}
+	virtual ~A() {}
+};
+class B : public A {   
+public:                       
+        virtual void f(int) {}        
+        virtual int h() {}
+};
+class C : public B {       
+public:                   
+	virtual void f(int, int) {}
+        virtual void x() {}     
+	static void b() {}
+};                      
+</pre>
+
+<p>
+<li> C++ supports polymorphic destruction of objects using a virtual destructor. 
+    An equivalent support for creation and coping of objects is missing. 
+    In C++, creation of object(s) always requires its type to be known at compile-time.
+    However, the Virtual Constructor idiom allows polymorphic creation of and 
+    coping of objects in C++.
+<p>
+Consider the following classes:
+<pre>
+class Employee 
+{
+  public:
+    virtual ~Employee () {}                 // Native support for polymorphic destruction.
+    virtual Employee * create () const = 0; // Virtual constructor (creation) 
+    virtual Employee * clone () const = 0;  // Virtual constructor (copying) 
+};
+class Manager : public Employee     // "is-a" relationship
+{
+  public:
+    Manager ();                     // Default constructor
+    Manager (Manager const &);      // Copy constructor
+    ~Manager () {}                  // Destructor
+    // your create                  // Virtual constructor (creation) 
+    // your clone                   // Virtual constructor (copying) 
+};
+class Programmer : public Employee { /* Very similar to the Manager class */ };
+Employee * duplicate (Employee const & e)
+{
+   return e.clone();  // Using virtual constructor idiom.
+}
+</pre>
+<ol type='A'>
+<li> Show your implementation of create in Manager.
+<li> Show your implementation of clone in Manager.
+</ol>
+
+<P>
+<li> Consider the following program:
+<pre>
+#include&lt;iostream&gt;
+using namespace std;
+
+class Base {
+public:
+  Base(int ii) : i(ii) { } 
+  Base& operator=(const Base& b) { i = b.i; }    
+  int i;
+};
+class Derived : public Base {
+public:
+  Derived(int ii, int jj) : Base(ii), j(jj) { } 
+  Derived & operator=(const Derived& d) { 
+    Base::operator=(d); 
+    j = d.j; 
+  }    
+  int j;
+};
+class Derived2 : public Base {
+public:
+  Derived2(int ii) : Base(ii) { } 
+};
+
+int main() {
+  Derived d1(1,1);
+  Derived d2(2,2);
+  d1 = d2;
+  cout << d1.i << " " << d1.j << endl;
+
+  Derived2 x1(3);
+  d1 = x1;
+  cout << d1.i << " " << d1.j << endl;
+}
+</pre>
+<ol type='A'>
+<li> Does the program compile? Why or why not?
+<li>  What about if we add a using declaration
+<pre>
+    using Base::operator=;
+</pre>
+    to the class Derived so that it will now look like:
+<pre>
+class Derived : public Base {
+public:
+  Derived(int ii, int jj) : Base(ii), j(jj) { } 
+  Derived & operator=(const Derived& d) { 
+    Base::operator=(d); 
+    j = d.j; 
+  }    
+  int j;
+  using Base::operator=;
+};
+</pre>
+<li> What conclusions will you draw about C++'s name hiding rule for function mames?
+<li> What are Java's name hiding rules for function names?
+</ol>
+
+
+<P>
+<li> Consider the following program:
+<pre>
+#include &lt;iostream&gt;
+#include &lt;vector&gt;
+#include &lt;memory&gt;
+using namespace std;
+
+class A { 
+public:
+  A() { cout <<"A()" << endl; }
+  ~A() { cout <<"~A()" << endl; }
+};
+
+class B { 
+public:
+  B() { cout <<"B()" << endl; }
+  ~B() { cout <<"~B()" << endl; }
+};
+
+
+class X { 
+public:
+   X() { cout <<"X()" << endl; }
+   ~X() { cout <<"~X() " << endl; }
+   A a;
+   B b;
+};
+
+class Y : public X { 
+public:
+   Y() { cout <<"Y()" << endl; }
+   ~Y() { cout <<"~Y() " << endl; }
+   A *c;
+   B *d;
+};
+
+
+int main()
+{
+     cout << "construction order:"  << endl;
+     Y y;
+     cout << "destruction order:"  << endl;
+}
+</pre>
+
+<ol type='A'>
+<li> What is the output after the first cout?	
+<li> What is the output after the second cout?	
+</ol>
+ 
+<P>
+<li> Consider the following program:
+<pre>
+#include &lt;iostream&gt;
+
+using namespace std;
+
+class Point {
+public:
+    Point (int xx, int yy, string ss) : x(xx), y(yy), s(ss) { }
+private:
+    int x;
+    int y;
+    string s;
+};
+
+
+class ColorPoint : public Point {
+public:
+    ColorPoint (int xx=0, int yy=0, string ss="", int cc=0) : Point(xx, yy, ss), c(cc) { }
+private:
+    int c;
+};
+
+int main() {
+   ColorPoint q(1, 2, "C++", 3);
+   ColorPoint p;
+   p = q; 
+   p = std::move(q); 
+}
+</pre>
+
+<ol type='A'>
+<li> Do the compiler-supplied copy-control operations
+     work in both classes? Why or why not?
+<li> In any case, give these member functions yourselves.
+</ol>
+
+
+
+
+</ol>
+
+<p>&nbsp;</p>
+<hr align="left">
+
+</td></tr></tbody></table>
+
+</body></html>

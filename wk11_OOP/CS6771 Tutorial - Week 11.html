@@ -1,0 +1,168 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+	<title>CS6771 Tutorial - Week 11</title>
+</head>
+<body>
+<h2>CS6771 Tutorial 2016</h2>
+<h2>Week Eleven</h2>
+
+<h3>Object Oriented Programming</h3>
+
+<strong>Topics Covered:</strong>
+<ul><li>Inheritance</li>
+<li>Polymorphism</li>
+<li>Access Control</li> 
+<li>Vtables</li>
+</ul>
+
+<strong>Consider the following code:</strong>
+<blockquote>
+<pre>
+class Base {
+private:
+  int i;
+};
+
+class Derived : public Base {
+public:
+  void foo(Derived &amp;o) {
+    j = o.i + o.j;
+  }
+private:
+  int j;
+};
+</pre>
+</blockquote>
+<ol>
+<li>Why does this code not compile?<br /><br />
+Change the base class to:
+<pre>
+class Base {
+protected:
+  int i;
+};
+</pre>
+The code will now compile, but what are the potential disadvantages of this solution? <br /><br />
+</li>
+<li>Change the code to:
+<pre>
+class Base {
+public:
+	const int&amp; getI() const { return i; }
+private:
+  int i;
+};
+
+class Derived : public Base {
+public:
+  void foo(Derived &amp;o) {
+    j = o.getI() + o.j;
+  }
+private:
+  int j;
+};
+</pre>
+What benefits does this approach give us? Why do we return a const reference to <em>i</em>?
+</li>
+</ol>
+
+<strong>Consider the following code:</strong>
+<blockquote>
+<pre>
+#include &lt;iostream&gt;
+
+class B {
+public:
+  virtual void f() { 
+    std::cout &lt;&lt; "B "; 
+  }
+};
+
+class D : public B {
+public:
+  virtual void f() { 
+    std::cout &lt;&lt; "D "; 
+  }
+};
+
+int main() {
+  B b;
+  D d;
+  b = d;
+  B &amp;pb = b;
+  b.f();
+  pb.f();
+}
+</pre>
+</blockquote>
+<ol>
+<li>The assignment <em>b = d;</em> is legal but is poor style as it causes the object slicing problem. What is the object slicing problem?</li>
+<li>What is the output of <em>b.f();</em> and why is this output produced?</li>
+<li>What is the output of <em>pb.f();</em> and why is this output produced?</li>
+<li>How can we correct this code to prevent the object slicing problem?</li>
+</li>
+</ol>
+<strong>Draw the vtables for classes A, B and C:</strong>
+<pre>
+class A {          
+public:               
+        virtual void f(int) {}
+        virtual int g() {}
+        void a() {}
+	virtual ~A() {}
+};
+class B : public A {   
+public:                       
+        virtual void f(int) {}        
+        virtual int h() {}
+};
+class C : public B {       
+public:                   
+	virtual void f(int, int) {}
+        virtual void x() {}     
+	static void b() {}
+};</pre>
+<strong>Revision Questions</strong> <br /><br />
+A friend function of a class can access:
+<ol type="A">
+<li>Only the public data members of the class</li>
+<li>Only the public and protected data members of the class</li>
+<li>All data members of the class</li>
+<li>All data members  of the class and its base classes</li>
+<li>Only the public and protected members of the class and its base classes</li>
+</ol>
+On paper/whiteboard work out the output of the following program:
+<pre>
+#include&lt;iostream&gt;
+#include&lt;typeinfo&gt;
+
+void e(const int &i, int j, int k) {
+  std::cout &lt;&lt; "1 ";
+}
+
+void e(int &i, int j, int k) {
+  std::cout &lt;&lt; "2 ";
+}
+
+template &lt;typename A, typename B, typename C&gt;
+void f(A &&a, B &&b, C &&c) {
+  using std::forward;
+  e(forward&lt;A&gt;(a), forward&lt;B&gt;(b), forward&lt;C&gt;(c));
+}
+
+int k{1};
+int g() { return k; }
+
+int main() {
+  f(1,2,3);
+  int i{1};
+  f(i,2,3);
+  const int &j = i;
+  f(j,2,3);
+  f(g(),2,3);
+}
+</pre>
+</body>
+</html>
+
