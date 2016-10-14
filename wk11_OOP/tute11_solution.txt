@@ -1,0 +1,259 @@
+       COMP6771 Advanced C++ Programming
+                  Session 2, 2016
+
+                 Tutorial -- Week 11
+
+                     Solutions
+
+
+Q1.  Objectives:
+
+  -- vtables
+  -- Static methods are not in vtables.
+  -- Virtual destructors are virtual functions and are included in vtables.
+  -- C++ name hiding
+  
+vtable for A:
+
+ ---------------
+  0 | &A:f(int)
+  1 | &A:g() 
+  2 | &~A() 
+ ---------------
+
+vtable for B:
+
+ ---------------
+  0 | &B:f(int)           // overridding A:f(int)
+  1 | &A:g() 
+  2 | &~B() 
+  3 | &B:h() 
+ ---------------
+
+vtable for C:
+
+ ---------------
+  0 | &B:f(int)
+  1 | &A:g() 
+  2 | &~C() 
+  3 | &B:h() 
+  4 | &C:f(int,int)
+  5 | &C:x()
+ ---------------
+
+A:f(int) is hidden in class C but it is still in the vtable of C to
+enable virtual calls on A:f(int) when the receiver object has the
+static types A and B and the dynamic type C. Of course, C:f(int, int)
+should be in the vtable of C. 
+
+Q2. Objectives
+    -- Virtual construction idiom
+    -- Covariant return types
+
+Read http://en.wikibooks.org/wiki/More_C%2B%2B_Idioms/Virtual_Constructor
+
+class Employee 
+{
+  public:
+    virtual ~Employee () {}                 // Native support for polymorphic destruction.
+    virtual Employee * create () const = 0; // Virtual constructor (creation) 
+    virtual Employee * clone () const = 0;  // Virtual constructor (copying) 
+};
+class Manager : public Employee     // "is-a" relationship
+{
+  public:
+    Manager ();                     // Default constructor
+    Manager (Manager const &);      // Copy constructor
+    ~Manager () {}                  // Destructor
+    Manager * create () const       // Virtual constructor (creation) 
+    {
+      return new Manager();
+    }
+    Manager * clone () const        // Virtual constructor (copying) 
+    {
+      return new Manager (*this);
+    }
+};
+class Programmer : public Employee { /* Very similar to the Manager class */ };
+Employee * duplicate (Employee const & e)
+{
+   return e.clone();  // Using virtual constructor idiom.
+}
+
+
+Q3 Objectives:
+  -- C++ name hiding
+  -- object slicing
+
+
+(A)  Due to name hiding, the program doesn't compile:
+
+g++ whyhidingrule1.cpp 
+whyhidingrule1.cpp: In function 'int main()':
+whyhidingrule1.cpp:31: error: no match for 'operator=' in 'd1 = x1'
+whyhidingrule1.cpp:13: note: candidates are: Derived& Derived::operator=(const Derived&)
+
+(B)  The modified code 
+
+#include<iostream>
+using namespace std;
+
+class Base {
+public:
+  Base(int ii) : i(ii) { } 
+  Base& operator=(const Base& b) { i = b.i; }    
+  int i;
+};
+class Derived : public Base {
+public:
+  Derived(int ii, int jj) : Base(ii), j(jj) { } 
+  Derived & operator=(const Derived& d) { 
+    Base::operator=(d); 
+    j = d.j; 
+  }    
+  int j;
+  using Base::operator=;
+};
+class Derived2 : public Base {
+public:
+  Derived2(int ii) : Base(ii) { } 
+};
+
+compiles but due to object slicing, the output can be surprising:
+
+2 2
+3 2
+
+(C) This is possibly the main reason why C++ adopts name hidding
+    for function names.
+
+(D) Java does not. See:
+
+http://docs.oracle.com/javase/tutorial/java/IandI/override.html
+
+Q4. Objectives (See Week 7 Wednesday Lecture Slides)
+
+   --- Initialisation and destruction order
+   --- Constructors invocation (e.g., no constructors invoked for c and d in Y).
+   
+
+OUTPUT:
+
+construction order:
+A()
+B()
+X()
+Y()
+destruction order:
+~Y() 
+~X() 
+~B()
+~A()
+
+
+Q5. Objectives (advanced)
+    -- Single vs multi-dispatching
+
+ 
+class triangle;
+
+class square : public shape {
+public:
+     virtual bool overlap(const shape &s) const {
+        s.overlap(*this);
+     }
+     virtual bool overlap(const square &s) const {
+	    // check the overlap between this square and square s
+     }
+     virtual bool overlap(const triangle &s) const {
+	    // check the overlap between this square and triangle s
+     }
+};
+class triangle : public shape {
+public:
+     virtual bool overlap(const shape &s) const {
+        s.overlap(*this);
+     }
+     virtual bool overlap(const square &s) const {
+	    // check the overlap between this triangle and square s
+     }
+     virtual bool overlap(const triangle &s) const {
+	    // check the overlap between this triangle and triangle s
+     }
+};
+
+
+Q6. Objectives
+     - copy control under inheriance
+     - must call a base copy assignment explicitly
+     - must call a base copy constructor explicitly if the default constructor does
+       not exist
+     - understanding when to provide these copy control operations and when not.
+
+A. Yes, the compiler-synthesized copy-control members
+   work in this case because all data members are of primitive
+   data types. By default, the synthesised copy-control members
+   perform memberwise copy, move and assignment for all its
+   members.
+
+B.
+
+#include<iostream>
+#include<string>
+
+using namespace std;
+
+class Point {
+public:
+    Point (int xx, int yy, string ss) : x(xx), y(yy), s(ss) { }
+    Point(const Point &p) : x(p.x), y(p.y), s(p.s) { }
+    Point(Point &&p) : x(p.x), y(p.y), s(p.s) { }
+    Point& operator=(const Point &p) {
+        if (this != &p) {
+            x = p.x; y = p.y, s = p.s;
+        }
+        return *this;
+    }
+    Point& operator=(Point &&p) {
+        if (this != &p) {
+            x = p.x; y = p.y, s = std::move(p.s);
+        }
+        return *this;
+    }
+   ~Point() { }
+private:
+    int x;
+    int y;
+    string s;
+};
+
+
+class ColorPoint : public Point {
+public:
+    ColorPoint (int xx=0, int yy=0, string ss="", int cc=0) : Point(xx, yy, ss), c(cc) { }
+    ColorPoint(const ColorPoint &p) : Point(p), c(p.c) { }
+    ColorPoint(ColorPoint &&p) : Point(std::move(p)), c(p.c) { }
+    ColorPoint& operator=(const ColorPoint &p) {
+        if (this != &p) { 
+            Point::operator=(p);
+            c = p.c;
+        }
+        return *this;
+    }
+    ColorPoint& operator=(ColorPoint &&p) {
+        if (this != &p) { 
+            Point::operator=(std::move(p));
+            c = p.c;
+        }
+        return *this;
+    }
+   ~ColorPoint() { }
+private:
+    int c;
+};
+
+int main() {
+   ColorPoint q(1,2,"C++",3);
+   ColorPoint p;
+   p = std::move(q);
+}
