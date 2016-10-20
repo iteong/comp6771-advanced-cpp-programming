@@ -1,0 +1,251 @@
+#+TITLE: Tutorial 9 (Week 10): Multithreading
+
+http://www.cse.unsw.edu.au/~cs6771/15s2/tuts/week10.html
+
+* Thread basics
+
+- Thread library introduced in C++11 (based largely on boost::thread)
+
+- Key headers: <thread> <mutex> <condition_variable> <future>
+
+- Other useful libraries: <chrono>
+
+** Compiling
+
+- Use -pthread rather than -lpthread.
+
+- This sets both preprocessor directives and linker options while the
+  latter is only for linking.
+
+   http://stackoverflow.com/questions/2127797/gcc-significance-of-pthread-flag-when-compiling
+
+
+** Querying the hardware
+
+- If you want to know what the hardware capabilities (e.g., number of cores)
+
+  unsigned int n = std::thread::hardware_concurrency();
+
+
+** Creating threads
+
+- A single thread of execution is encapsulated in the std::thread
+  class and created at construction of the std::thread instance.
+
+- std::this_thread is a namespace that groups functions that refer to
+  the current thread.
+
+- Waiting till a thread has finished execution using the
+  std::thread::join() member function. Otherwise the destructor for
+  the thread objects will be called and will result in std::terminate
+  being called.
+
+- Note: thread::detach() can be used to separate thread of execution
+  from thread object. Thread is no longer joinable.
+
+- See thread_basics.cpp: simple_creation()
+
+
+** Mutual-Exclusion
+
+- <mutex> defines basic mutual exclusion primitives for controlling
+  access to resources.
+
+- Simplest mutex is std::mutex.
+
+- Typically don't use the lock/unlock functions of std::mutex. Instead
+  use the RAII-style std::lock_guard object:
+
+  - Resource Acqusition Is Initialisation (RAII) is a C++ technique
+    for using resources (file, mutexes, databases, etc). Resource
+    allocation and cleanup is associated with object lifecycle.
+
+  - RAII is particularly important for writing exception safe code.
+
+  - std::lock_guard locks the mutex when the lock_guard object is
+    created and unlocks the mutex when the lock_guard object is
+    destroyed. No need for explicit lock/unlock calls and code is
+    exception safe.
+
+- See thread_basics.cpp: mutexed_creation()
+
+
+** Other mutex and locks
+
+- std::mutex is the simplest case. There are others, for example
+  std::recursive_mutex, std::timed_mutex.
+
+- Similarly std::lock_guard is the simplest case.
+
+- Some online tutorials and references:
+
+  - http://www.bogotobogo.com/cplusplus/multithreaded4_cplusplus11.php
+
+  - https://www.classes.cs.uchicago.edu/archive/2013/spring/12300-1/labs/lab6/
+
+  - http://en.cppreference.com/w/cpp/thread
+
+
+
+* Mandelbrot Parallelisation
+
+- Parallelising Mandelbrot Set calculations
+
+- Mandelbrot code:
+
+   https://github.com/sol-prog/Mandelbrot_Set
+
+- Note: freeimage library dependency.
+
+** Version 1
+
+- Q4. Problem is that the amount of work performed by each thread is
+  uneven. Threads that do the outer edges finish quickly, while
+  threads doing the inner part take a longer time.
+
+** Version 2
+
+- Interleaved calculation so that each thread performs calculations
+  over the whole space. The work performed by each thread is more even.
+
+- Unnecessary iterations in inner loop.
+
+** Version 3
+
+- Only enters inner loop when the row number (modulo num of threads)
+  matches a thread identifier.
+
+** Version 4
+
+- Uses a mutex to control access to ensure that only one thread is
+  assigned a row.
+
+- Uses recursive lambda function.
+
+  - Note: the type declaration of calc:
+
+        std::function<void(unsigned int)> calc = [..., &calc](...)
+        {
+           ... calc(...); ...
+        };
+
+     instead of:
+
+        auto calc = [..., &calc](...){ .... calc(...); .... };
+
+  - Reason is the need to know the type of calc when the lambda is
+    defined. But the lambda defines the type of calc.
+
+  - std::function<void(unsigned int>) is a type with a bunch of
+    overloaded constructors that can take any callable object with
+    given prototype.
+
+    http://en.cppreference.com/w/cpp/utility/functional/function
+
+  - `std::function<void(unsigned int)> calc` effectively creates a
+    wrapper around the lambda and therefore can be referred to from
+    within the lambda.
+
+  - See: http://stackoverflow.com/questions/2067988/recursive-lambda-functions-in-c11
+
+  - Note: std::function<> performs a form of "type-erasure"
+    (essentially storing an indirect reference to the underlying
+    callable object). This can have a performance penalty.
+
+  - C++14 lambda can offer a solution for this issue:
+
+    http://stackoverflow.com/questions/18085331/recursive-lambda-functions-in-c14
+
+  - Is it worth the effort? Maybe a case where it is easier to write a
+    functor, as a functor can easy call itself (i.e., with the "this"
+    pointer).
+
+
+* Condition variables
+
+- Condition variables allow for notifications for blocked threads.
+
+- See thread_basic.cpp: producer_consumer()
+
+- std::condition_variable doesn't work with the
+  std::lock_guard. Instead it needs std::unique_lock which is more
+  flexible.
+
+- Note: the thread that will trigger the notification can still use
+  the simpler std::lock_guard. It is the thread that is waiting for
+  the notification that needs the std::unique_lock.
+
+** Waking up (and spurious wakeups)
+
+- Using the condition_variable to wait on some notification/signal:
+
+  - The waiting thread has to lock a mutex and then pass this lock (a
+    std::unique_lock) to the condition_variable's wait() function. The
+    wait() function then releases the lock and blocks the thread until
+    it receives the notification/signal. On receiving a signal the
+    thread wakes up and re-acquires the lock and then returns from
+    from the wait() call.
+
+- the wait() function can have spurious wakeups. Hence a typical usage
+  is to wrap the wait() call in a loop that tests if some condition is
+  satisfied.
+
+- There is suprisingly little information on spurious wakeups. However
+  it is typically a property of the underlying OS mechanisms (e.g.,
+  POSIX threads or Windows threads).
+
+  https://en.wikipedia.org/wiki/Spurious_wakeup
+
+  http://stackoverflow.com/questions/8594591/why-does-pthread-cond-wait-have-spurious-wakeups
+
+  http://en.cppreference.com/w/cpp/thread/condition_variable/wait
+
+- Can spurious wakeups lead to multiple accesses to a shared resource?
+
+  - Scenario: consider the case of two consumer threads that are
+    waiting for notifications from a producer thread. Now, say the
+    producer thread adds some input and issues a notify_one(). At this
+    point one of the consumers threads will be woken up as a result of
+    the notification. However, imagine if at the same time the second
+    consumer thread is also woken up due to a spurious wakeup. Is this
+    a problem?
+
+  - NO!!! This is not a problem because we still have the mutex to
+    control access to the resource.
+
+  - As part of the wait() call the consumers blocks on the mutex. So
+    the first consumer that wakes up will gain control and lock the
+    mutex as part of the return from the wait() call.
+
+  - The second consumer will have woken up but will not be able to
+    exit the wait() call because it will still be blocked on the
+    mutex.
+
+  - When the first consumer finishes it unlocks the mutex. Now the
+    second consumer unblocks and locks the mutex and can exit the
+    wait() call.
+
+  - The second consumer checks the loop condition and discoveres the
+    condition is not satisfied so it goes back into the loop and calls
+    wait() again.
+
+  - NOTE: Neither consumer will ever "know" if it was the officially
+    notified thread or the spuriously woken up thread.
+
+  - Nevertheless the mutex ensure that only one thread has access to
+    the resource.
+
+- C++11 std::condition_variable::wait() is able to internalise the
+  wait loop through an overload version that takes two parameters. The
+  second parameter is a callable object that returns true if the exit
+  condition is meet. The two parameter wait() will only return when a
+  notification is received (or spuriously woken up) AND the exit
+  condition is met.
+
+
+* Other advanced multi-threading primitives
+
+- For more high level primitives the <future> library contains
+  functions and classes to support asynchronous function calls.
+
+  https://solarianprogrammer.com/2012/10/17/cpp-11-async-tutorial/
