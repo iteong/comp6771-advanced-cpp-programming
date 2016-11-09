@@ -1,0 +1,193 @@
+          COMP6771 Advanced C++ Programming
+                  Session 2, 2016
+
+                 Tutorial -- Week 7
+
+                     Solutions
+
+Q1. (Specialisation)
+
+template <typename T>
+const T& Min(const T& a, const T& b) {
+        cout << "main";
+    return a < b ? a : b;  
+}
+
+typedef const char* const & PCC;
+
+template <>
+PCC Min(PCC a, PCC b) {
+        cout << "abc";
+    return (strcmp(a, b) < 0) ? a : b;  
+}
+
+Read Section 16.5 of the text. What we want to define
+is a specialisation of the function template when T = char*.
+Our function template requires a reference to the 
+const version of this type. So the correct type 
+for the specialisation is const char* const &.
+
+
+The following solution will not work as it is not a
+specialisation of the function template given. 
+
+typedef const char* PCC;
+
+PCC Min(PCC a, PCC b) {
+        cout << "abc";
+    return (strcmp(a, b) < 0) ? a : b;  
+}
+
+Q2. (Overloading)
+
+The program compiles as Min is overloaded in both cases. 
+
+  cout <<  Min(4, 4.2) << endl;; // calls (1)
+  cout << Min(5, 3) << endl;     // calls (2)
+
+The compiler will generate the following two functions:
+
+ int Min<int, double>(int const&, double const&) // from (1)
+ int Min<int>(int const&, int const&)            // from (2)
+
+
+Q3. Objectives
+
+    -- function templates
+    -- function template specialisation
+    -- function overloading
+    -- array references
+
+(A) -- (C):
+
+#include <iostream>
+using std::cout;
+using std::endl;
+
+// larger.h
+
+template<class T> T larger(T a, T b);
+long* larger(long* a, long* b);
+template <typename T> T larger (const T array[], int size); // Overloaded template prototype
+template <typename T, int size> T larger (T (&array)[size]); 
+
+#include "larger.tem"
+
+// larger.tem
+
+template <class T> T larger(T a, T b) {
+  cout << "standard version " << endl;
+  return a>b ? a : b;
+}
+
+
+template<> long* larger(long* a, long* b) {                 // Q(A)
+  cout << "specialised version for long* " << endl;
+  return *a>*b ? a : b;
+}
+
+template <typename T> T larger (const T array[], int size) { // Q(B)
+  cout << "template overload version for arrays " << endl;
+  T result = array[0];
+  for(int i = 1 ; i < size; i++)
+    if(array[i] > result)
+      result = array[i];
+  return result;
+}
+
+template <typename T, int size> T larger (T (&array)[size]) { // Q(C)
+  cout << "template non-overload version for arrays " << endl;
+  T result = array[0];
+  for(int i = 1 ; i < size; i++)
+    if(array[i] > result)
+      result = array[i];
+  return result;
+}
+
+D: 
+
+One template instantiation is generated from Q(B) for all arrays with the same type T
+regardless of what their sizes are. As for Q(C), size is part of the array type. 
+As explained in lec7-1.pdf, different template instantiations are generated for arrays 
+of different type and different sizes.
+
+E:
+
+standard version
+Larger of 1.5 and 2.5 is 2.5
+standard version
+Larger of 3.5 and 4.5 is 4.5
+standard version
+45
+standard version
+9
+specialised version for long*
+9
+template overload version for arrays
+13.5
+template non-overload version for arrays
+13.5
+
+Q4. Objectives: same as in Q2
+
+template calc
+ordinary calc
+ordinary calc
+ordinary calc
+template specialisation calc
+
+Q5. Objecives
+    --- Learning how to write class templates
+    --- memory management
+
+#include <iostream>
+#include <cmath>
+
+using namespace std;
+
+template <typename T> class Vector
+{
+  T * pData;
+  int nSize;
+  public:
+    Vector(int);
+    ~Vector() {delete [] pData;}
+    T& operator [] (int i) {return pData[i];}
+};
+template <typename T>
+Vector <T>::Vector(int n)
+{
+       pData = new T[n];
+    nSize = n;
+};
+
+main()
+{
+    Vector <int> iV(4);
+    int i;
+    for ( i = 0;i < 4;i++)
+       iV[i] = i*i;
+    for ( i = 0;i < 4;i++)
+          cout << iV[i] << "  ";
+    cout << endl;
+    Vector <double> dV(4);
+    for ( i = 0; i < 4;i++)
+      dV[i] = sqrt(i);
+    for ( i = 0;i < 4;i++)
+         cout << dV[i] << "  ";
+    cout << endl;
+       return 0;
+}
+
+Q6. Objecives
+
+    -- wrapper classes ("adding one extra level of indirection to solve all CS problems")
+    -- programming experience with templates
+
+output: (count the number of objects created for each distinct type)
+
+
+number of MyString<char>:    2
+number of MyString<wchar_t>: 1
+number of MyString<char>:    3
+number of MyString<wchar_t>: 1

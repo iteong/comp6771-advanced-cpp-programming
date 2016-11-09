@@ -3,20 +3,27 @@
 
 #include <iostream>
 
+// cannot compile as i is a private member of Base, cannot be accessed by foo() of Derived even if inherit
+
 class Base {
-protected: // changed to protected from private
-  int i;
+public: 
+	// use getter so that no need to notify client if change the variable name
+	// use const as i is not supposed to be modifiable, it is a private member
+	virtual const int &getI() const { return i; } // can put virtual to override
+
+private:
+	int i;
 };
 
-// can't access protected member i through Base, needs to do it through Derived class (they are similar to private members)
-// search access specifiers (substitution principle)
 class Derived : public Base {
 public:
-	void foo(Derived &o) {
-		j = o.i + o.j;
+  void foo(Derived &o) {
+    j = o.getI() + o.j;
+    // j = o.getI()++ + o.j allowed, if Base clase public is non-const: int &getI() { return i; }
+    // virtual can allow you to override method
   }
 private:
-	int j;
+  int j;
 };
 
 // imagine you writing a btree class for client, and intend for client to inherit that class

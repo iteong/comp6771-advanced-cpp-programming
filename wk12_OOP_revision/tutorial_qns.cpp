@@ -121,7 +121,7 @@ int main() {
   std::list<X> l2; // 2nd dtor => when this second list goes out of scope, the destructor for X gets called
   l2.push_back(y); // when pushing back y, which is an X, copying it into the list
 }
-2. ctor ctor copy-ctor dtor dtor
+2. ctor ctor copy-ctor dtor dtor // the 2 destructors are for y and the copy of y
 
 // Revision questions
 1. int, *int, &int
